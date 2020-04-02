@@ -50,7 +50,7 @@ export class MaskApplierService {
     this.customPattern = customPattern;
     return this.applyMask(inputValue, mask);
   }
-  public applyMask(inputValue: string, maskExpression: string, position: number = 0, cb: Function = () => { }): string {
+  public applyMask(inputValue: string, maskExpression: string, position: number = 0, cb: Function = () => {}): string {
     if (inputValue === undefined || inputValue === null || maskExpression === undefined) {
       return '';
     }
@@ -94,9 +94,8 @@ export class MaskApplierService {
         inputValue.match(/[-@#!$%\\^&*()_£¬'+|~=`{}\[\]:";<>.?\/]/) ||
         inputValue.match('[^A-Za-z0-9,]')
       ) {
-        inputValue = this._stripToDecimal(inputValue);
+        inputValue = this._stripToDecimalSeparator(inputValue, position);
       }
-
       inputValue =
         inputValue.length > 1 && inputValue[0] === '0' && inputValue[1] !== this.decimalMarker
           ? inputValue.slice(1, inputValue.length)
@@ -118,23 +117,22 @@ export class MaskApplierService {
       }
 
       const precision: number = this.getPrecision(maskExpression);
+
       inputValue = this.checkInputPrecision(inputValue, precision, this.decimalMarker);
       const strForSep: string = inputValue.replace(new RegExp(thousandSeperatorCharEscaped, 'g'), '');
       result = this._formatWithSeparators(strForSep, this.thousandSeparator, this.decimalMarker, precision);
 
-      const commaShift: number = result.indexOf(',') - inputValue.indexOf(',');
+      const commaShift: number = result.indexOf(this.decimalMarker) - inputValue.indexOf(this.decimalMarker);
       const shiftStep: number = result.length - inputValue.length;
 
-      if (shiftStep > 0 && result[position] !== ',') {
+      if (shiftStep > 0 && result[position] !== this.decimalMarker) {
+        const _shift: number = shiftStep;
         backspaceShift = true;
-        let _shift = 0;
-        do {
-          this._shift.add(position + _shift);
-          _shift++;
-        } while (_shift < shiftStep);
+        this._shift.clear();
+        this._shift.add(position);
       } else if (
-        (commaShift !== 0 && position > 0 && !(result.indexOf(',') >= position && position > 3)) ||
-        (!(result.indexOf('.') >= position && position > 3) && shiftStep <= 0)
+        (commaShift !== 0 && position > 0 && !(result.indexOf(this.decimalMarker) >= position && position > 3)) ||
+        (!(result.indexOf(this.thousandSeparator) >= position && position > 3) && shiftStep <= 0)
       ) {
         this._shift.clear();
         backspaceShift = true;
@@ -149,7 +147,7 @@ export class MaskApplierService {
         // tslint:disable-next-line
         let i: number = 0, inputSymbol: string = inputArray[0];
         i < inputArray.length;
-        i++ , inputSymbol = inputArray[i]
+        i++, inputSymbol = inputArray[i]
       ) {
         if (cursor === maskExpression.length) {
           break;
@@ -302,7 +300,11 @@ export class MaskApplierService {
         ) {
           cursor += 3;
           result += inputSymbol;
-        } else if (this.showMaskTyped && this.maskSpecialCharacters.indexOf(inputSymbol) < 0 && inputSymbol !== this.placeHolderCharacter) {
+        } else if (
+          this.showMaskTyped &&
+          this.maskSpecialCharacters.indexOf(inputSymbol) < 0 &&
+          inputSymbol !== this.placeHolderCharacter
+        ) {
           stepBack = true;
         }
       }
@@ -361,9 +363,9 @@ export class MaskApplierService {
     const separatorLimit: string = this.separatorLimit.replace(/\s/g, '');
     if (separatorLimit && +separatorLimit) {
       if (res[0] === '-') {
-          res = `-${res.slice(1, res.length).slice(0, separatorLimit.length)}`;
+        res = `-${res.slice(1, res.length).slice(0, separatorLimit.length)}`;
       } else {
-          res = res.slice(0, separatorLimit.length);
+        res = res.slice(0, separatorLimit.length);
       }
     }
     const rgx: RegExp = /(\d+)(\d{3})/;
@@ -414,6 +416,16 @@ export class MaskApplierService {
       .split('')
       .filter((i: string, idx: number) => {
         return i.match('^-?\\d') || i === '.' || i === ',' || (i === '-' && idx === 0);
+      })
+      .join('');
+  }
+  private _stripToDecimalSeparator(str: string, position: number): string {
+    const decimalIndex = str.indexOf(this.decimalMarker);
+    return str
+      .split('')
+      .filter((i: string, idx: number) => {
+        const isPossible = decimalIndex === -1 || decimalIndex > position ? i === this.thousandSeparator : false;
+        return i.match('^-?\\d') || i === this.decimalMarker || isPossible || (i === '-' && idx === 0);
       })
       .join('');
   }
