@@ -36,7 +36,7 @@ describe('Directive: Mask (Percent)', () => {
 
   it('percent for 123', () => {
     component.mask = 'percent';
-    equal('123', '12', fixture);
+    equal('123', '100', fixture);
   });
 
   it('percent for 99.99', () => {
@@ -53,7 +53,7 @@ describe('Directive: Mask (Percent)', () => {
     component.mask = 'percent';
     component.suffix = '%';
     equal('50', '50%', fixture);
-    equal('123', '12%', fixture);
+    equal('123', '100%', fixture);
     equal('50.50', '50.50%', fixture);
   });
 });

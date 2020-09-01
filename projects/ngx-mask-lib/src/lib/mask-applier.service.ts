@@ -81,8 +81,10 @@ export class MaskApplierService {
       }
       if (this.percentage(inputValue)) {
         result = inputValue;
+      } else if (parseFloat(inputValue) > 100) {
+        result = '100';
       } else {
-        result = inputValue.substring(0, inputValue.length - 1);
+          result = inputValue.substring(0, inputValue.length - 1);
       }
     } else if (maskExpression.startsWith('separator')) {
       if (
